@@ -671,6 +671,45 @@ public class DatabaseActions {
         }
     }
 
+    public void newDatabaseFromURL() throws TransportException, IOException, ProblemReadingDatabaseFile, CryptoException {
+
+        // Ask the user for the remote database location
+        NewDatabaseFromUrlDialog newDBDialog = new NewDatabaseFromUrlDialog(mainWindow);
+        newDBDialog.pack();
+        newDBDialog.setLocationRelativeTo(mainWindow);
+        newDBDialog.setVisible(true);
+
+        if (newDBDialog.getOkClicked()) {
+            // Get the remote database options
+            String remoteLocation = newDBDialog.getUrlTextField().getText();
+            String username = newDBDialog.getUsernameTextField().getText();
+            String password = newDBDialog.getPasswordTextField().getText();
+
+            // Ask the user for a location to save the database file to
+            File saveDatabaseTo = getSaveAsFile(Translator.translate("saveDatabaseAs"));
+
+            if (saveDatabaseTo != null) {
+
+                // Download the database
+                Transport transport = Transport.getTransportForURL(new URL(remoteLocation));
+                File downloadedDatabaseFile = transport.getRemoteFile(remoteLocation, username, password);
+
+                // Delete the file is it already exists
+                if (saveDatabaseTo.exists()) {
+                    saveDatabaseTo.delete();
+                }
+
+                // Save the downloaded database file to the new location
+                Util.copyFile(downloadedDatabaseFile, saveDatabaseTo);
+
+                // Now open the downloaded database
+                openDatabase(saveDatabaseTo.getAbsolutePath());
+
+            }
+        }
+
+    }
+
 
     public void openDatabaseFromURL() throws TransportException, IOException, ProblemReadingDatabaseFile, CryptoException {
 

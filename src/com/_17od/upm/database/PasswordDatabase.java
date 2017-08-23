@@ -29,7 +29,7 @@ import java.util.HashMap;
  * This class represents the main interface to a password database.
  * All interaction with the database file is done using this class.
  */
-public class PasswordDatabase {
+public class PasswordDatabase{
 
     private File databaseFile;
     private Revision revision;

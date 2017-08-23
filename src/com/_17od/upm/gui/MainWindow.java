@@ -95,6 +95,7 @@ public class MainWindow extends JFrame implements ActionListener {
 
 	public static final String NEW_DATABASE_TXT = "newDatabaseMenuItem";
 	public static final String OPEN_DATABASE_TXT = "openDatabaseMenuItem";
+	public static final String NEW_DATABASE_FROM_URL_TXT = "newDatabaseFromUrlMenuItem";
 	public static final String OPEN_DATABASE_FROM_URL_TXT = "openDatabaseFromURLMenuItem";
 	public static final String SYNC_DATABASE_TXT = "syncWithRemoteDatabaseMenuItem";
 	public static final String CHANGE_MASTER_PASSWORD_TXT = "changeMasterPasswordMenuItem";
@@ -129,6 +130,7 @@ public class MainWindow extends JFrame implements ActionListener {
 	private JMenu databaseMenu;
 	private JMenuItem newDatabaseMenuItem;
 	private JMenuItem openDatabaseMenuItem;
+	private JMenuItem newDatabaseFromUrlMenuItem;
 	private JMenuItem openDatabaseFromURLMenuItem;
 	private JMenuItem syncWithRemoteDatabaseMenuItem;
 	private JMenuItem changeMasterPasswordMenuItem;
@@ -644,6 +646,13 @@ public class MainWindow extends JFrame implements ActionListener {
 		openDatabaseMenuItem.addActionListener(this);
 		openDatabaseMenuItem.setActionCommand(OPEN_DATABASE_TXT);
 
+        newDatabaseFromUrlMenuItem = new JMenuItem("New Database From URL", KeyEvent.VK_P);
+        newDatabaseFromUrlMenuItem.setAccelerator(
+                KeyStroke.getKeyStroke(KeyEvent.VK_P, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        databaseMenu.add(newDatabaseFromUrlMenuItem);
+        newDatabaseFromUrlMenuItem.addActionListener(this);
+        newDatabaseFromUrlMenuItem.setActionCommand(NEW_DATABASE_FROM_URL_TXT);
+
 		openDatabaseFromURLMenuItem = new JMenuItem(Translator.translate(OPEN_DATABASE_FROM_URL_TXT), KeyEvent.VK_L);
 		openDatabaseFromURLMenuItem.setAccelerator(
 				KeyStroke.getKeyStroke(KeyEvent.VK_L, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
@@ -1046,8 +1055,10 @@ public class MainWindow extends JFrame implements ActionListener {
 			if (event.getActionCommand() == MainWindow.NEW_DATABASE_TXT) {
 				dbActions.newDatabase();
 			} else if (event.getActionCommand() == MainWindow.OPEN_DATABASE_TXT) {
-				dbActions.openDatabase();
-			} else if (event.getActionCommand() == MainWindow.OPEN_DATABASE_FROM_URL_TXT) {
+                dbActions.openDatabase();
+			} else if (event.getActionCommand() == MainWindow.NEW_DATABASE_FROM_URL_TXT) {
+                dbActions.newDatabaseFromURL();
+            } else if (event.getActionCommand() == MainWindow.OPEN_DATABASE_FROM_URL_TXT) {
 				dbActions.openDatabaseFromURL();
 			} else if (event.getActionCommand() == MainWindow.SYNC_DATABASE_TXT) {
 				dbActions.syncWithRemoteDatabase();
