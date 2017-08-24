@@ -673,39 +673,68 @@ public class DatabaseActions {
 
     public void newDatabaseFromURL() throws TransportException, IOException, ProblemReadingDatabaseFile, CryptoException {
 
-        // Ask the user for the remote database location
-        NewDatabaseFromUrlDialog newDBDialog = new NewDatabaseFromUrlDialog(mainWindow);
-        newDBDialog.pack();
-        newDBDialog.setLocationRelativeTo(mainWindow);
-        newDBDialog.setVisible(true);
+        NewDatabaseFromUrlDialog newDBDialog = createNewDBDialog();
+        boolean connected = false;
+        boolean exited = false;
+        File downloadedDatabaseFile = null;
+        do
+        {
+            if (newDBDialog.getOkClicked()) {
+                // Get the remote database options
+                String remoteLocation = newDBDialog.getUrlTextField().getText();
+                String username = newDBDialog.getUsernameTextField().getText();
+                String password = newDBDialog.getPasswordTextField().getText();
+                String confirm = newDBDialog.getConfirmPasswordTextField().getText();
+                if(password.equals(confirm))
+                {
+                    if(!remoteLocation.substring(0,6).equals("http://"))
+                    {
+                        remoteLocation = "http://" + remoteLocation;
+                    }
+                    Transport transport = Transport.getTransportForURL(new URL(remoteLocation));
+                    // Download the database
+                    downloadedDatabaseFile = null;
+                    try
+                    {
+                        downloadedDatabaseFile = transport.getRemoteFile(remoteLocation, username, password);
+                    }
+                    catch(TransportException e){}
 
-        if (newDBDialog.getOkClicked()) {
-            // Get the remote database options
-            String remoteLocation = newDBDialog.getUrlTextField().getText();
-            String username = newDBDialog.getUsernameTextField().getText();
-            String password = newDBDialog.getPasswordTextField().getText();
-
+                    if (downloadedDatabaseFile != null) {
+                        connected = true;
+                        MainWindow.remoteUsername = username;
+                        MainWindow.remotePassword = password;
+                        MainWindow.remoteURL = remoteLocation;
+                    }
+                    else
+                    {
+                        newDBDialog = createNewDBDialog();
+                    }
+                }
+                else
+                {
+                    newDBDialog = createNewDBDialog();
+                }
+            }
+            if(!newDBDialog.isVisible())
+            {
+                exited = true;
+            }
+        }while(!connected && !exited);
+        if(connected)
+        {
             // Ask the user for a location to save the database file to
             File saveDatabaseTo = getSaveAsFile(Translator.translate("saveDatabaseAs"));
-
-            if (saveDatabaseTo != null) {
-
-                // Download the database
-                Transport transport = Transport.getTransportForURL(new URL(remoteLocation));
-                File downloadedDatabaseFile = transport.getRemoteFile(remoteLocation, username, password);
-
-                // Delete the file is it already exists
-                if (saveDatabaseTo.exists()) {
-                    saveDatabaseTo.delete();
-                }
-
-                // Save the downloaded database file to the new location
-                Util.copyFile(downloadedDatabaseFile, saveDatabaseTo);
-
-                // Now open the downloaded database
-                openDatabase(saveDatabaseTo.getAbsolutePath());
-
+            // Delete the file if it already exists
+            if (saveDatabaseTo.exists()) {
+                saveDatabaseTo.delete();
             }
+
+            // Save the downloaded database file to the new location
+            Util.copyFile(downloadedDatabaseFile, saveDatabaseTo);
+
+            // Now open the downloaded database
+            openDatabase(saveDatabaseTo.getAbsolutePath());
         }
 
     }
@@ -713,41 +742,83 @@ public class DatabaseActions {
 
     public void openDatabaseFromURL() throws TransportException, IOException, ProblemReadingDatabaseFile, CryptoException {
 
+        OpenDatabaseFromURLDialog openDBDialog = createOpenDBDialog();
+        boolean connected = false;
+        boolean exited = false;
+        File downloadedDatabaseFile = null;
+        do
+        {
+            if (openDBDialog.getOkClicked()) {
+                // Get the remote database options
+                String remoteLocation = openDBDialog.getUrlTextField().getText();
+                String username = openDBDialog.getUsernameTextField().getText();
+                String password = openDBDialog.getPasswordTextField().getText();
+
+                if(!remoteLocation.substring(0,6).equals("http://"))
+                {
+                    remoteLocation = "http://" + remoteLocation;
+                }
+                Transport transport = Transport.getTransportForURL(new URL(remoteLocation));
+                // Download the database
+                downloadedDatabaseFile = null;
+                try
+                {
+                    downloadedDatabaseFile = transport.getRemoteFile(remoteLocation, username, password);
+
+                }
+                catch(TransportException e){}
+
+                if (downloadedDatabaseFile != null) {
+                    connected = true;
+                    MainWindow.remoteUsername = username;
+                    MainWindow.remotePassword = password;
+                    MainWindow.remoteURL = remoteLocation;
+                }
+                else
+                {
+                    openDBDialog = createOpenDBDialog();
+                }
+            }
+            if(!openDBDialog.isVisible())
+            {
+                exited = true;
+            }
+        }while(!connected && !exited);
+        if(connected)
+        {
+            // Ask the user for a location to save the database file to
+            File saveDatabaseTo = getSaveAsFile(Translator.translate("saveDatabaseAs"));
+            // Delete the file is it already exists
+            if (saveDatabaseTo.exists()) {
+                saveDatabaseTo.delete();
+            }
+
+            // Save the downloaded database file to the new location
+            Util.copyFile(downloadedDatabaseFile, saveDatabaseTo);
+
+            // Now open the downloaded database
+            openDatabase(saveDatabaseTo.getAbsolutePath());
+        }
+    }
+
+    private OpenDatabaseFromURLDialog createOpenDBDialog()
+    {
         // Ask the user for the remote database location
         OpenDatabaseFromURLDialog openDBDialog = new OpenDatabaseFromURLDialog(mainWindow);
         openDBDialog.pack();
         openDBDialog.setLocationRelativeTo(mainWindow);
-        openDBDialog.show();
+        openDBDialog.setVisible(true);
+        return openDBDialog;
+    }
 
-        if (openDBDialog.getOkClicked()) {
-            // Get the remote database options
-            String remoteLocation = openDBDialog.getUrlTextField().getText();
-            String username = openDBDialog.getUsernameTextField().getText();
-            String password = openDBDialog.getPasswordTextField().getText();
-
-            // Ask the user for a location to save the database file to
-            File saveDatabaseTo = getSaveAsFile(Translator.translate("saveDatabaseAs"));
-
-            if (saveDatabaseTo != null) {
-
-                // Download the database
-                Transport transport = Transport.getTransportForURL(new URL(remoteLocation));
-                File downloadedDatabaseFile = transport.getRemoteFile(remoteLocation, username, password);
-
-                // Delete the file is it already exists
-                if (saveDatabaseTo.exists()) {
-                    saveDatabaseTo.delete();
-                }
-
-                // Save the downloaded database file to the new location
-                Util.copyFile(downloadedDatabaseFile, saveDatabaseTo);
-
-                // Now open the downloaded database
-                openDatabase(saveDatabaseTo.getAbsolutePath());
-
-            }
-        }
-
+    private NewDatabaseFromUrlDialog createNewDBDialog()
+    {
+        // Ask the user to create the remote database
+        NewDatabaseFromUrlDialog newDBDialog = new NewDatabaseFromUrlDialog(mainWindow);
+        newDBDialog.pack();
+        newDBDialog.setLocationRelativeTo(mainWindow);
+        newDBDialog.setVisible(true);
+        return newDBDialog;
     }
 
     public void reloadDatabase()

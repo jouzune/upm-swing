@@ -93,6 +93,10 @@ public class MainWindow extends JFrame implements ActionListener {
 	private static final long serialVersionUID = 1L;
 	private static final String applicationName = "Universal Password Manager";
 
+    public static String remoteUsername = null;
+    public static String remotePassword = null;
+    public static String remoteURL = "localhost:3000";
+
 	public static final String NEW_DATABASE_TXT = "newDatabaseMenuItem";
 	public static final String OPEN_DATABASE_TXT = "openDatabaseMenuItem";
 	public static final String NEW_DATABASE_FROM_URL_TXT = "newDatabaseFromUrlMenuItem";

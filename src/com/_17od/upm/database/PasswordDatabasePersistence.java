@@ -37,6 +37,7 @@ import com._17od.upm.crypto.CryptoException;
 import com._17od.upm.crypto.DESDecryptionService;
 import com._17od.upm.crypto.EncryptionService;
 import com._17od.upm.crypto.InvalidPasswordException;
+import com._17od.upm.gui.MainWindow;
 import com._17od.upm.util.Util;
 
 /**
@@ -319,6 +320,15 @@ public class PasswordDatabasePersistence {
 
         //Now encrypt the database data
         byte[] encryptedData = encryptionService.encrypt(dataToEncrypt);
+
+        if(MainWindow.remoteURL != null && MainWindow.remotePassword != null && MainWindow.remoteUsername != null)
+        {
+            //do transport things with the byte[] encryptedData
+        }
+//        else
+//        {
+//
+//        }
         
         //Write the salt and the encrypted data out to the database file
         FileOutputStream fos = new FileOutputStream(database.getDatabaseFile());
