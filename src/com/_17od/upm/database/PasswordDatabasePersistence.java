@@ -323,6 +323,14 @@ public class PasswordDatabasePersistence {
 
         if(MainWindow.remoteURL != null && MainWindow.remotePassword != null && MainWindow.remoteUsername != null)
         {
+            System.out.println("-----------------------------------------------");
+            System.out.println("ready to save to the database.");
+            System.out.println("URL: " + MainWindow.remoteURL);
+            System.out.println("Username: " + MainWindow.remoteUsername);
+            System.out.println("Password: " + MainWindow.remotePassword);
+            System.out.println("With the data: " + FILE_HEADER.getBytes() + DB_VERSION + encryptionService.getSalt() + encryptedData);
+            System.out.println();
+            System.out.println();
             //do transport things with the byte[] encryptedData
         }
 //        else
