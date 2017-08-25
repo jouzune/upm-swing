@@ -34,6 +34,7 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
+import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
@@ -233,31 +234,30 @@ public class RESTTransport extends Transport {
 
     public void delete(String targetLocation, String name, String username, String password) throws TransportException {
 
-        targetLocation = addTrailingSlash(targetLocation) + "deletefile.php";
+        targetLocation = addTrailingSlash(targetLocation) + "database";
 
-        PostMethod post = new PostMethod(targetLocation);
-        post.addParameter("fileToDelete", name);
+        DeleteMethod delete = new DeleteMethod(targetLocation);
 
         //This part is wrapped in a try/finally so that we can ensure
         //the connection to the HTTP server is always closed cleanly
         try {
 
-            //Set the authentication details
-            if (username != null) {
-                Credentials creds = new UsernamePasswordCredentials(new String(username), new String(password));
-                URL url = new URL(targetLocation);
-                AuthScope authScope = new AuthScope(url.getHost(), url.getPort());
-                client.getState().setCredentials(authScope, creds);
-                client.getParams().setAuthenticationPreemptive(true);
+            if (username == null) {
+                throw new TransportException("No username");
+            }
+            if (password == null) {
+                throw new TransportException("No password");
             }
 
-            int status = client.executeMethod(post);
-            if (status != HttpStatus.SC_OK) {
-                throw new TransportException("There's been some kind of problem deleting a file on the HTTP server.\n\nThe HTTP error message is [" + HttpStatus.getStatusText(status) + "]");
-            }
+            //Set the HTTP Basic authentication details
+            delete.addRequestHeader("Authorization", getBasicAuth(username, password));
 
-            if (!post.getResponseBodyAsString().equals("OK") ) {
-                throw new TransportException("There's been some kind of problem deleting a file to the HTTP server.\n\nThe error message is [" + post.getResponseBodyAsString() + "]");
+            int status = client.executeMethod(delete);
+
+            switch (status) {
+                case HttpStatus.SC_OK:
+                    break;
+                default: throw new TransportException(delete.getResponseBodyAsString());
             }
 
         } catch (MalformedURLException e) {
@@ -267,7 +267,7 @@ public class RESTTransport extends Transport {
         } catch (IOException e) {
             throw new TransportException(e);
         } finally {
-            post.releaseConnection();
+            delete.releaseConnection();
         }
 
     }
