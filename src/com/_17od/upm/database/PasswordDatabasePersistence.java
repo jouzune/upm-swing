@@ -39,7 +39,9 @@ import com._17od.upm.crypto.EncryptionService;
 import com._17od.upm.crypto.InvalidPasswordException;
 import com._17od.upm.gui.MainWindow;
 import com._17od.upm.transport.HTTPTransport;
+import com._17od.upm.transport.RESTTransport;
 import com._17od.upm.transport.Transport;
+import com._17od.upm.transport.TransportException;
 import com._17od.upm.util.Util;
 
 /**
@@ -325,19 +327,31 @@ public class PasswordDatabasePersistence {
 
         if(MainWindow.remoteURL != null && MainWindow.remotePassword != null && MainWindow.remoteUsername != null)
         {
+            MainWindow.remotePassword = "pass";
+            MainWindow.remoteUsername = "test";
             System.out.println("-----------------------------------------------");
             System.out.println("ready to save to the database.");
             System.out.println("URL: " + MainWindow.remoteURL);
             System.out.println("Username: " + MainWindow.remoteUsername);
             System.out.println("Password: " + MainWindow.remotePassword);
             System.out.println("With the data: " + FILE_HEADER.getBytes() + DB_VERSION + encryptionService.getSalt() + encryptedData);
-            System.out.println();
-            System.out.println();
             //do transport things with the byte[] encryptedData
             byte[] bytes = ("" + FILE_HEADER.getBytes() + DB_VERSION + encryptionService.getSalt() + encryptedData).getBytes();
-            HTTPTransport.save(MainWindow.remoteURL, MainWindow.remoteUsername, MainWindow.remotePassword, bytes);
+            RESTTransport transport = new RESTTransport();
+            try
+            {
+                transport.save(MainWindow.remoteURL, bytes, MainWindow.remoteUsername, MainWindow.remotePassword);
+            }
+            catch(TransportException e)
+            {
+                e.printStackTrace();
+            }
             System.out.println("Save was called.");
+            System.out.println();
+            System.out.println();
+
         }
+
 //        else
 //        {
 //
