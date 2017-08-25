@@ -34,10 +34,7 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
-import org.apache.commons.httpclient.methods.DeleteMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.*;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
 import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
 import org.apache.commons.httpclient.methods.multipart.Part;
@@ -122,7 +119,8 @@ public class RESTTransport extends Transport {
             fis.read(data);
             fis.close();
 
-            post.addParameter("database", URLEncoder.encode(new String(data), "UTF-8"));
+//            post.addParameter("database", URLEncoder.encode(new String(data), "UTF-8"));
+            post.setRequestEntity(new StringRequestEntity(new String(data)));
 
             int status = client.executeMethod(post);
 
@@ -185,7 +183,8 @@ public class RESTTransport extends Transport {
                     break;
                 default: throw new TransportException(method.getResponseBodyAsString());
             }
-            retVal = URLDecoder.decode(method.getResponseBodyAsString(), "UTF-8").getBytes();
+//            retVal = URLDecoder.decode(method.getResponseBodyAsString(), "UTF-8").getBytes();
+            retVal = method.getResponseBody();
 
         } catch (MalformedURLException e) {
             throw new TransportException(e);
