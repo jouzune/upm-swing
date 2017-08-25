@@ -34,6 +34,7 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
+import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
@@ -133,6 +134,76 @@ public class RESTTransport{
         } finally {
             post.releaseConnection();
         }
+    }
+
+//    public File getRemoteFile(String remoteLocation) throws TransportException {
+//        return getRemoteFile(remoteLocation, null, null);
+//    }
+//
+//
+//    public File getRemoteFile(String remoteLocation, String fileName, String httpUsername, String httpPassword) throws TransportException {
+//        remoteLocation = addTrailingSlash(remoteLocation);
+//        return getRemoteFile(remoteLocation + fileName, httpUsername, httpPassword);
+//    }
+//
+//
+//    public File getRemoteFile(String remoteLocation, String httpUsername, String httpPassword) throws TransportException {
+//        try {
+//            byte[] remoteFile = get(remoteLocation, httpUsername, httpPassword);
+//            File downloadedFile = File.createTempFile("upm", null);
+//            FileOutputStream fos = new FileOutputStream(downloadedFile);
+//            fos.write(remoteFile);
+//            fos.close();
+//            return downloadedFile;
+//        } catch (IOException e) {
+//            throw new TransportException(e);
+//        }
+//    }
+
+
+    public void delete(String targetLocation, String name, String username, String password) throws TransportException {
+
+        targetLocation = addTrailingSlash(targetLocation) + "database";
+
+        DeleteMethod delete = new DeleteMethod(targetLocation);
+
+        //This part is wrapped in a try/finally so that we can ensure
+        //the connection to the HTTP server is always closed cleanly
+        try {
+
+            if (username == null) {
+                throw new TransportException("No username");
+            }
+            if (password == null) {
+                throw new TransportException("No password");
+            }
+
+            //Set the HTTP Basic authentication details
+            delete.addRequestHeader("Authorization", getBasicAuth(username, password));
+
+            int status = client.executeMethod(delete);
+
+            switch (status) {
+                case HttpStatus.SC_OK:
+                    break;
+                default: throw new TransportException(delete.getResponseBodyAsString());
+            }
+
+        } catch (MalformedURLException e) {
+            throw new TransportException(e);
+        } catch (HttpException e) {
+            throw new TransportException(e);
+        } catch (IOException e) {
+            throw new TransportException(e);
+        } finally {
+            delete.releaseConnection();
+        }
+
+    }
+
+
+    public void delete(String targetLocation, String name) throws TransportException {
+        delete(targetLocation, name, null, null);
     }
 
     private String addTrailingSlash(String url) {
