@@ -34,10 +34,7 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
-import org.apache.commons.httpclient.methods.DeleteMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.*;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
 import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
 import org.apache.commons.httpclient.methods.multipart.Part;
@@ -112,7 +109,8 @@ public class RESTTransport{
             post.addRequestHeader("Authorization", getBasicAuth(username, password));
 
 
-            post.addParameter("database", URLEncoder.encode(new String(data), "UTF-8"));
+//            post.addParameter("database", URLEncoder.encode(new String(data), "UTF-8"));
+            post.setRequestEntity(new StringRequestEntity(new String(data)));
 
             int status = client.executeMethod(post);
 
@@ -174,20 +172,9 @@ public class RESTTransport{
                     break;
                 default: throw new TransportException(method.getResponseBodyAsString());
             }
-//            String test = "[B@3ed1528a3[B@75c78c92[B@80000bf";
-//            System.out.println("test: " + test);
-//            String test2 = URLEncoder.encode(test, "UTF-8");
-//            System.out.println("test2: " + test2);
-//            String test3 = URLDecoder.decode(test2, "UTF-8");
-//            System.out.println("test3: " + test3);
 
-
-            String s = method.getResponseBodyAsString();
-            System.out.println("s: " + s);
-            String s2 = URLDecoder.decode(s, "UTF-8");
-            System.out.println("s2: " + s2);
-            retVal = URLDecoder.decode(s, "UTF-8").getBytes();
-
+            
+            retVal = method.getResponseBody();
 
         } catch (MalformedURLException e) {
             throw new TransportException(e);
