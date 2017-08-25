@@ -23,6 +23,7 @@ package com._17od.upm.transport;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 
@@ -184,8 +185,7 @@ public class RESTTransport extends Transport {
                     break;
                 default: throw new TransportException(method.getResponseBodyAsString());
             }
-
-            retVal = method.getResponseBody();
+            retVal = URLDecoder.decode(method.getResponseBodyAsString(), "UTF-8").getBytes();
 
         } catch (MalformedURLException e) {
             throw new TransportException(e);
