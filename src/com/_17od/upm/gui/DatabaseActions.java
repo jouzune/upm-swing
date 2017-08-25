@@ -692,24 +692,16 @@ public class DatabaseActions {
                         remoteLocation = "http://" + remoteLocation;
                     }
                     Transport transport = Transport.getTransportForURL(new URL(remoteLocation));
-                    // Download the database
                     downloadedDatabaseFile = null;
-                    try
-                    {
-                        downloadedDatabaseFile = transport.getRemoteFile(remoteLocation, username, password);
-                    }
-                    catch(TransportException e){}
-
-                    if (downloadedDatabaseFile != null) {
-                        connected = true;
-                        MainWindow.remoteUsername = username;
-                        MainWindow.remotePassword = password;
-                        MainWindow.remoteURL = remoteLocation;
-                    }
-                    else
-                    {
-                        newDBDialog = createNewDBDialog();
-                    }
+                    connected = true;
+                    MainWindow.remoteUsername = username;
+                    MainWindow.remotePassword = password;
+                    MainWindow.remoteURL = remoteLocation;
+//                    try
+//                    {
+                        //downloadedDatabaseFile = transport.getRemoteFile(remoteLocation, username, password);
+//                    }
+//                    catch(TransportException e){newDBDialog = createNewDBDialog();}
                 }
                 else
                 {
@@ -726,17 +718,12 @@ public class DatabaseActions {
             // Ask the user for a location to save the database file to
             File saveDatabaseTo = getSaveAsFile(Translator.translate("saveDatabaseAs"));
             // Delete the file if it already exists
-            if (saveDatabaseTo.exists()) {
-                saveDatabaseTo.delete();
-            }
-
-            // Save the downloaded database file to the new location
-            Util.copyFile(downloadedDatabaseFile, saveDatabaseTo);
-
-            // Now open the downloaded database
-            openDatabase(saveDatabaseTo.getAbsolutePath());
+            database = new PasswordDatabase(saveDatabaseTo);
+            dbPers = new PasswordDatabasePersistence(MainWindow.remotePassword.toCharArray());
+            saveDatabase();
+            accountNames = new ArrayList();
+            doOpenDatabaseActions();
         }
-
     }
 
 
@@ -764,7 +751,6 @@ public class DatabaseActions {
                 try
                 {
                     downloadedDatabaseFile = transport.getRemoteFile(remoteLocation, username, password);
-
                 }
                 catch(TransportException e){}
 
