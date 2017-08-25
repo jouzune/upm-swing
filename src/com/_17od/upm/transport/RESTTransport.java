@@ -23,6 +23,7 @@ package com._17od.upm.transport;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 
@@ -91,7 +92,7 @@ public class RESTTransport{
 
     }
 
-    public void save(String targetLocation, byte[] data, String username, String password) throws TransportException {
+    public void post(String targetLocation, byte[] data, String username, String password) throws TransportException {
 
         targetLocation = targetLocation + "/api/database";
 
@@ -136,29 +137,101 @@ public class RESTTransport{
         }
     }
 
-//    public File getRemoteFile(String remoteLocation) throws TransportException {
-//        return getRemoteFile(remoteLocation, null, null);
-//    }
-//
-//
-//    public File getRemoteFile(String remoteLocation, String fileName, String httpUsername, String httpPassword) throws TransportException {
-//        remoteLocation = addTrailingSlash(remoteLocation);
-//        return getRemoteFile(remoteLocation + fileName, httpUsername, httpPassword);
-//    }
-//
-//
-//    public File getRemoteFile(String remoteLocation, String httpUsername, String httpPassword) throws TransportException {
-//        try {
-//            byte[] remoteFile = get(remoteLocation, httpUsername, httpPassword);
-//            File downloadedFile = File.createTempFile("upm", null);
-//            FileOutputStream fos = new FileOutputStream(downloadedFile);
-//            fos.write(remoteFile);
-//            fos.close();
-//            return downloadedFile;
-//        } catch (IOException e) {
-//            throw new TransportException(e);
-//        }
-//    }
+    public byte[] get(String url, String fileName) throws TransportException {
+        return get(url, fileName, null, null);
+    }
+
+
+    public byte[] get(String url, String fileName, String username, String password) throws TransportException {
+        url = addTrailingSlash(url);
+        return get(url + fileName, username, password);
+    }
+
+
+    public byte[] get(String url, String username, String password) throws TransportException {
+
+        byte[] retVal = null;
+
+        url += "/api/database";
+        GetMethod method = new GetMethod(url);
+
+        //This part is wrapped in a try/finally so that we can ensure
+        //the connection to the HTTP server is always closed cleanly
+        try {
+            if (username == null) {
+                throw new TransportException("No username");
+            }
+            if (password == null) {
+                throw new TransportException("No password");
+            }
+
+            //Set the HTTP Basic authentication details
+            method.setRequestHeader("Authorization", getBasicAuth(username, password));
+            int status = client.executeMethod(method);
+
+            switch (status) {
+                case HttpStatus.SC_OK:
+                    break;
+                default: throw new TransportException(method.getResponseBodyAsString());
+            }
+//            String test = "[B@3ed1528a3[B@75c78c92[B@80000bf";
+//            System.out.println("test: " + test);
+//            String test2 = URLEncoder.encode(test, "UTF-8");
+//            System.out.println("test2: " + test2);
+//            String test3 = URLDecoder.decode(test2, "UTF-8");
+//            System.out.println("test3: " + test3);
+
+
+            String s = method.getResponseBodyAsString();
+            System.out.println("s: " + s);
+            String s2 = URLDecoder.decode(s, "UTF-8");
+            System.out.println("s2: " + s2);
+            retVal = URLDecoder.decode(s, "UTF-8").getBytes();
+
+
+        } catch (MalformedURLException e) {
+            throw new TransportException(e);
+        } catch (HttpException e) {
+            throw new TransportException(e);
+        } catch (IOException e) {
+            throw new TransportException(e);
+        } finally {
+            method.releaseConnection();
+        }
+
+        return retVal;
+
+    }
+
+
+    public File getRemoteFile(String remoteLocation, String fileName) throws TransportException {
+        return getRemoteFile(remoteLocation, fileName, null, null);
+    }
+
+
+    public File getRemoteFile(String remoteLocation) throws TransportException {
+        return getRemoteFile(remoteLocation, null, null);
+    }
+
+
+    public File getRemoteFile(String remoteLocation, String fileName, String httpUsername, String httpPassword) throws TransportException {
+        remoteLocation = addTrailingSlash(remoteLocation);
+        return getRemoteFile(remoteLocation + fileName, httpUsername, httpPassword);
+    }
+
+
+    public File getRemoteFile(String remoteLocation, String httpUsername, String httpPassword) throws TransportException {
+        try {
+            byte[] remoteFile = get(remoteLocation, httpUsername, httpPassword);
+            File downloadedFile = File.createTempFile("upm", null);
+            FileOutputStream fos = new FileOutputStream(downloadedFile);
+            fos.write(remoteFile);
+            fos.close();
+            return downloadedFile;
+        } catch (IOException e) {
+            throw new TransportException(e);
+        }
+    }
 
 
     public void delete(String targetLocation, String name, String username, String password) throws TransportException {

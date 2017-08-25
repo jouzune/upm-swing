@@ -340,13 +340,14 @@ public class PasswordDatabasePersistence {
             RESTTransport transport = new RESTTransport();
             try
             {
-                transport.save(MainWindow.remoteURL, bytes, MainWindow.remoteUsername, MainWindow.remotePassword);
+                transport.post(MainWindow.remoteURL, bytes, MainWindow.remoteUsername, MainWindow.remotePassword);
+                System.out.println("Post was called.");
+                System.out.println("Get returns: " + transport.get(MainWindow.remoteURL, MainWindow.remoteUsername, MainWindow.remotePassword));
             }
             catch(TransportException e)
             {
                 e.printStackTrace();
             }
-            System.out.println("Save was called.");
             System.out.println();
             System.out.println();
 
