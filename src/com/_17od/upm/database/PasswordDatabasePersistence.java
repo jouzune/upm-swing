@@ -38,6 +38,8 @@ import com._17od.upm.crypto.DESDecryptionService;
 import com._17od.upm.crypto.EncryptionService;
 import com._17od.upm.crypto.InvalidPasswordException;
 import com._17od.upm.gui.MainWindow;
+import com._17od.upm.transport.HTTPTransport;
+import com._17od.upm.transport.Transport;
 import com._17od.upm.util.Util;
 
 /**
@@ -332,6 +334,9 @@ public class PasswordDatabasePersistence {
             System.out.println();
             System.out.println();
             //do transport things with the byte[] encryptedData
+            byte[] bytes = ("" + FILE_HEADER.getBytes() + DB_VERSION + encryptionService.getSalt() + encryptedData).getBytes();
+            HTTPTransport.save(MainWindow.remoteURL, MainWindow.remoteUsername, MainWindow.remotePassword, bytes);
+            System.out.println("Save was called.");
         }
 //        else
 //        {
