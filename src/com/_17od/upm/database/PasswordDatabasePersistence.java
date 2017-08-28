@@ -327,23 +327,20 @@ public class PasswordDatabasePersistence {
 
         if(MainWindow.remoteURL != null && MainWindow.remotePassword != null && MainWindow.remoteUsername != null)
         {
-            MainWindow.remotePassword = "pass";
-            MainWindow.remoteUsername = "test";
             System.out.println("-----------------------------------------------");
             System.out.println("ready to save to the database.");
             System.out.println("URL: " + MainWindow.remoteURL);
             System.out.println("Username: " + MainWindow.remoteUsername);
             System.out.println("Password: " + MainWindow.remotePassword);
             //do transport things with the byte[] encryptedData
-            byte[] bytes = ("" + FILE_HEADER.getBytes() + DB_VERSION + encryptionService.getSalt() + encryptedData).getBytes();
-            System.out.println("With the data: " + bytes);
+            byte[] bytes = ("" + FILE_HEADER + DB_VERSION + new String(encryptionService.getSalt()) + new String(encryptedData)).getBytes();
+            System.out.println("With the data: " + new String(bytes));
 
             RESTTransport transport = new RESTTransport();
             try
             {
                 transport.post(MainWindow.remoteURL, bytes, MainWindow.remoteUsername, MainWindow.remotePassword);
                 System.out.println("Post was called.");
-                System.out.println("Get returns: " + transport.get(MainWindow.remoteURL, MainWindow.remoteUsername, MainWindow.remotePassword));
             }
             catch(TransportException e)
             {
@@ -353,11 +350,6 @@ public class PasswordDatabasePersistence {
             System.out.println();
 
         }
-
-//        else
-//        {
-//
-//        }
         
         //Write the salt and the encrypted data out to the database file
         FileOutputStream fos = new FileOutputStream(database.getDatabaseFile());

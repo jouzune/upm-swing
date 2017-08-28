@@ -110,7 +110,8 @@ public class RESTTransport{
 
 
 //            post.addParameter("database", URLEncoder.encode(new String(data), "UTF-8"));
-            post.setRequestEntity(new StringRequestEntity(new String(data)));
+            System.out.println("Data from post: " + new String(data));
+            post.setRequestEntity(new StringRequestEntity(new String(data, "UTF-8")));
 
             int status = client.executeMethod(post);
 
@@ -173,10 +174,8 @@ public class RESTTransport{
                 default: throw new TransportException(method.getResponseBodyAsString());
             }
 
-            String retValString = method.getResponseBodyAsString();
-            System.out.printf("retval string:" + retValString);
-            retVal = retValString.getBytes();
-            System.out.printf("retval bytes:" + retVal);
+            retVal = method.getResponseBody();
+            System.out.println("retval string:" + new String(retVal));
 
         } catch (MalformedURLException e) {
             throw new TransportException(e);
