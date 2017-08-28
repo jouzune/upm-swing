@@ -782,6 +782,7 @@ public class DatabaseActions {
             writer.flush();
 
             System.out.println("about to open database");
+
             // Now open the downloaded database
             openDatabase(saveDatabaseTo.getAbsolutePath());
         }

@@ -153,7 +153,6 @@ public class RESTTransport{
             //Set the HTTP Basic authentication details
             post.addRequestHeader("Authorization", getBasicAuth(username, password));
 
-
             System.out.println("Data from post: " + new String(data));
             post.setRequestEntity(new StringRequestEntity(new String(data, "UTF-8")));
 
