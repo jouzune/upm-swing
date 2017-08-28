@@ -334,9 +334,10 @@ public class PasswordDatabasePersistence {
             System.out.println("URL: " + MainWindow.remoteURL);
             System.out.println("Username: " + MainWindow.remoteUsername);
             System.out.println("Password: " + MainWindow.remotePassword);
-            System.out.println("With the data: " + FILE_HEADER.getBytes() + DB_VERSION + encryptionService.getSalt() + encryptedData);
             //do transport things with the byte[] encryptedData
             byte[] bytes = ("" + FILE_HEADER.getBytes() + DB_VERSION + encryptionService.getSalt() + encryptedData).getBytes();
+            System.out.println("With the data: " + bytes);
+
             RESTTransport transport = new RESTTransport();
             try
             {

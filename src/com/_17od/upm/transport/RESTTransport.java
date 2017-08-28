@@ -173,8 +173,10 @@ public class RESTTransport{
                 default: throw new TransportException(method.getResponseBodyAsString());
             }
 
-            
-            retVal = method.getResponseBody();
+            String retValString = method.getResponseBodyAsString();
+            System.out.printf("retval string:" + retValString);
+            retVal = retValString.getBytes();
+            System.out.printf("retval bytes:" + retVal);
 
         } catch (MalformedURLException e) {
             throw new TransportException(e);
