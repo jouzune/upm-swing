@@ -27,7 +27,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -39,6 +41,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
 import javax.swing.Timer;
 
+import com._17od.upm.transport.RESTTransport;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -676,7 +679,6 @@ public class DatabaseActions {
         NewDatabaseFromUrlDialog newDBDialog = createNewDBDialog();
         boolean connected = false;
         boolean exited = false;
-        File downloadedDatabaseFile = null;
         do
         {
             if (newDBDialog.getOkClicked()) {
@@ -691,17 +693,13 @@ public class DatabaseActions {
                     {
                         remoteLocation = "http://" + remoteLocation;
                     }
-                    Transport transport = Transport.getTransportForURL(new URL(remoteLocation));
-                    downloadedDatabaseFile = null;
+                    RESTTransport transport = new RESTTransport();
+
+//                    transport.post(remoteLocation,  , username, password);
                     connected = true;
                     MainWindow.remoteUsername = username;
                     MainWindow.remotePassword = password;
                     MainWindow.remoteURL = remoteLocation;
-//                    try
-//                    {
-                        //downloadedDatabaseFile = transport.getRemoteFile(remoteLocation, username, password);
-//                    }
-//                    catch(TransportException e){newDBDialog = createNewDBDialog();}
                 }
                 else
                 {
@@ -732,7 +730,7 @@ public class DatabaseActions {
         OpenDatabaseFromURLDialog openDBDialog = createOpenDBDialog();
         boolean connected = false;
         boolean exited = false;
-        File downloadedDatabaseFile = null;
+        byte[] downloadedDatabaseBytes = null;
         do
         {
             if (openDBDialog.getOkClicked()) {
@@ -745,16 +743,17 @@ public class DatabaseActions {
                 {
                     remoteLocation = "http://" + remoteLocation;
                 }
-                Transport transport = Transport.getTransportForURL(new URL(remoteLocation));
+                RESTTransport transport = new RESTTransport();
                 // Download the database
-                downloadedDatabaseFile = null;
+                downloadedDatabaseBytes = null;
                 try
                 {
-                    downloadedDatabaseFile = transport.getRemoteFile(remoteLocation, username, password);
+                    downloadedDatabaseBytes = transport.get(remoteLocation, username, password);
+                    System.out.println("downloaded bytes: " + new String(downloadedDatabaseBytes));
                 }
-                catch(TransportException e){}
+                catch(TransportException e){ e.printStackTrace(); }
 
-                if (downloadedDatabaseFile != null) {
+                if (downloadedDatabaseBytes != null) {
                     connected = true;
                     MainWindow.remoteUsername = username;
                     MainWindow.remotePassword = password;
@@ -778,10 +777,11 @@ public class DatabaseActions {
             if (saveDatabaseTo.exists()) {
                 saveDatabaseTo.delete();
             }
+            BufferedWriter writer = new BufferedWriter(new FileWriter(saveDatabaseTo));
+            writer.write(new String(downloadedDatabaseBytes));
+            writer.flush();
 
-            // Save the downloaded database file to the new location
-            Util.copyFile(downloadedDatabaseFile, saveDatabaseTo);
-
+            System.out.println("about to open database");
             // Now open the downloaded database
             openDatabase(saveDatabaseTo.getAbsolutePath());
         }

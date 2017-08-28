@@ -89,6 +89,51 @@ public class RESTTransport{
 
     }
 
+    public void put(String targetLocation, byte[] data, String username, String password) throws TransportException
+    {
+        targetLocation = targetLocation + "/api/database";
+        PutMethod put = new PutMethod(targetLocation);
+
+        try {
+            if (username == null) {
+                throw new TransportException("No username");
+            }
+            if (password == null) {
+                throw new TransportException("No password");
+            }
+
+            System.out.println("Data from put: " + new String(data));
+
+            String usernameEncoded = "username=" + URLEncoder.encode(username, "UTF-8");
+            String passwordEncoded = "password=" + URLEncoder.encode(password, "UTF-8");
+            String databaseEncoded = "database=" + URLEncoder.encode(new String(data), "UTF-8");
+
+            String str = String.format("%s&%s&%s", usernameEncoded, passwordEncoded, databaseEncoded);
+            System.out.println("Put body: " + str);
+            put.setRequestEntity(new StringRequestEntity(str, "application/x-www-form-urlencoded", "UTF-8"));
+            int status = client.executeMethod(put);
+
+            switch (status) {
+                case HttpStatus.SC_CREATED:
+                    break;
+                case HttpStatus.SC_BAD_REQUEST:
+                    throw new TransportException(put.getResponseBodyAsString());
+                default: break;
+            }
+
+        } catch (FileNotFoundException e) {
+            throw new TransportException(e);
+        } catch (MalformedURLException e) {
+            throw new TransportException(e);
+        } catch (HttpException e) {
+            throw new TransportException(e);
+        } catch (IOException e) {
+            throw new TransportException(e);
+        } finally {
+            put.releaseConnection();
+        }
+    }
+
     public void post(String targetLocation, byte[] data, String username, String password) throws TransportException {
 
         targetLocation = targetLocation + "/api/database";
@@ -109,8 +154,13 @@ public class RESTTransport{
             post.addRequestHeader("Authorization", getBasicAuth(username, password));
 
 
+            System.out.println("Data from post: " + new String(data));
+            post.setRequestEntity(new StringRequestEntity(new String(data, "UTF-8")));
+
+//            post.addParameter("username", URLEncoder.encode(username, "UTF-8"));
+//            post.addParameter("password", URLEncoder.encode(password, "UTF-8"));
 //            post.addParameter("database", URLEncoder.encode(new String(data), "UTF-8"));
-            post.setRequestEntity(new StringRequestEntity(new String(data)));
+//            post.addParameter("database", new String(data));
 
             int status = client.executeMethod(post);
 
@@ -119,7 +169,8 @@ public class RESTTransport{
                     break;
                 case HttpStatus.SC_BAD_REQUEST:
                     throw new TransportException(post.getResponseBodyAsString());
-                default: break;
+                default:
+                    throw new TransportException(post.getResponseBodyAsString());
             }
 
         } catch (FileNotFoundException e) {
@@ -173,10 +224,8 @@ public class RESTTransport{
                 default: throw new TransportException(method.getResponseBodyAsString());
             }
 
-            String retValString = method.getResponseBodyAsString();
-            System.out.printf("retval string:" + retValString);
-            retVal = retValString.getBytes();
-            System.out.printf("retval bytes:" + retVal);
+            retVal = method.getResponseBody();
+            System.out.println("retval string:" + new String(retVal));
 
         } catch (MalformedURLException e) {
             throw new TransportException(e);
