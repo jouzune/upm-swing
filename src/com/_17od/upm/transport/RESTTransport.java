@@ -106,12 +106,18 @@ public class RESTTransport{
             }
 
             //Set the HTTP Basic authentication details
-            post.addRequestHeader("Authorization", getBasicAuth(username, password));
+//            post.addRequestHeader("Authorization", getBasicAuth(username, password));
+
 
 
 //            post.addParameter("database", URLEncoder.encode(new String(data), "UTF-8"));
             System.out.println("Data from post: " + new String(data));
             post.setRequestEntity(new StringRequestEntity(new String(data, "UTF-8")));
+
+//            post.addParameter("username", URLEncoder.encode(username, "UTF-8"));
+//            post.addParameter("password", URLEncoder.encode(password, "UTF-8"));
+//            post.addParameter("database", URLEncoder.encode(new String(data), "UTF-8"));
+//            post.addParameter("database", new String(data));
 
             int status = client.executeMethod(post);
 
