@@ -27,10 +27,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -779,8 +776,9 @@ public class DatabaseActions {
             if (saveDatabaseTo.exists()) {
                 saveDatabaseTo.delete();
             }
-            BufferedWriter writer = new BufferedWriter(new FileWriter(saveDatabaseTo));
-            writer.write(new String(downloadedDatabaseBytes));
+            FileOutputStream fos = new FileOutputStream(saveDatabaseTo);
+            fos.write(downloadedDatabaseBytes);
+            fos.close();
 
             // Now open the downloaded database
             openDatabase(saveDatabaseTo.getAbsolutePath());

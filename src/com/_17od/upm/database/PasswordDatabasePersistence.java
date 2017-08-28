@@ -29,6 +29,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -43,6 +44,7 @@ import com._17od.upm.transport.RESTTransport;
 import com._17od.upm.transport.Transport;
 import com._17od.upm.transport.TransportException;
 import com._17od.upm.util.Util;
+import org.bouncycastle.util.encoders.Base64;
 
 /**
  * This factory is used to load or create a PasswordDatabase. Different versions
@@ -333,14 +335,18 @@ public class PasswordDatabasePersistence {
             System.out.println("Username: " + MainWindow.remoteUsername);
             System.out.println("Password: " + MainWindow.remotePassword);
             //do transport things with the byte[] encryptedData
-            byte[] bytes = ("" + FILE_HEADER + DB_VERSION + new String(encryptionService.getSalt()) + new String(encryptedData)).getBytes();
-            System.out.println("With the data: " + new String(bytes));
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            stream.write(FILE_HEADER.getBytes());
+            stream.write(DB_VERSION);
+            stream.write(encryptionService.getSalt());
+            stream.write(encryptedData);
+            stream.flush();
+            byte[] bytes = stream.toByteArray();
 
             RESTTransport transport = new RESTTransport();
             try
             {
                 transport.post(MainWindow.remoteURL, bytes, MainWindow.remoteUsername, MainWindow.remotePassword);
-                System.out.println("Post was called.");
             }
             catch(TransportException e)
             {
