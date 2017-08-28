@@ -110,7 +110,7 @@ public class RESTTransport{
 
             String str = String.format("%s&%s&%s", usernameEncoded, passwordEncoded, databaseEncoded);
             System.out.println("Put body: " + str);
-            put.setRequestEntity(new StringRequestEntity(str, "application/x-www-urlencoded", "UTF-8"));
+            put.setRequestEntity(new StringRequestEntity(str, "application/x-www-form-urlencoded", "UTF-8"));
             int status = client.executeMethod(put);
 
             switch (status) {
