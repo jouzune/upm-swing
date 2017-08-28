@@ -85,7 +85,7 @@ public class RESTTransport{
 
     public void put(String targetLocation, byte[] data, String username, String password) throws TransportException
     {
-        targetLocation = targetLocation + "/api/database";
+        targetLocation = addTrailingSlash(targetLocation) + "api/database";
         PutMethod put = new PutMethod(targetLocation);
 
         try {
@@ -128,7 +128,7 @@ public class RESTTransport{
 
     public void post(String targetLocation, byte[] data, String username, String password) throws TransportException {
 
-        targetLocation = targetLocation + "/api/database";
+        targetLocation = addTrailingSlash(targetLocation) + "api/database";
 
         PostMethod post = new PostMethod(targetLocation);
 
@@ -142,8 +142,7 @@ public class RESTTransport{
                 throw new TransportException("No password");
             }
             String dataStr = new String(Base64.encode(data));
-            System.out.print("POST body:");
-            System.out.println(dataStr);
+            System.out.print("POST body: " + dataStr);
 
             post.addRequestHeader("Authorization", getBasicAuth(username, password));
             post.addRequestHeader("Content-Type", "text/plain; charset=us-ascii");
@@ -185,7 +184,7 @@ public class RESTTransport{
 
         byte[] retVal = null;
 
-        url += "/api/database";
+        url = addTrailingSlash(url) + "api/database";
         GetMethod method = new GetMethod(url);
 
         //This part is wrapped in a try/finally so that we can ensure
@@ -257,7 +256,7 @@ public class RESTTransport{
 
     public void delete(String targetLocation, String name, String username, String password) throws TransportException {
 
-        targetLocation = addTrailingSlash(targetLocation) + "database";
+        targetLocation = addTrailingSlash(targetLocation) + "api/database";
 
         DeleteMethod delete = new DeleteMethod(targetLocation);
 
