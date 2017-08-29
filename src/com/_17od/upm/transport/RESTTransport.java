@@ -145,6 +145,11 @@ public class RESTTransport{
             post.addRequestHeader("Content-Type", "text/plain; charset=us-ascii");
             post.setRequestEntity(new ByteArrayRequestEntity(Base64.encode(data)));
 
+//            post.addParameter("username", URLEncoder.encode(username, "UTF-8"));
+//            post.addParameter("password", URLEncoder.encode(password, "UTF-8"));
+//            post.addParameter("database", URLEncoder.encode(new String(data), "UTF-8"));
+//            post.addParameter("database", new String(data));
+
             int status = client.executeMethod(post);
 
             switch (status) {

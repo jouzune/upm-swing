@@ -676,7 +676,6 @@ public class DatabaseActions {
         NewDatabaseFromUrlDialog newDBDialog = createNewDBDialog();
         boolean connected = false;
         boolean exited = false;
-        File downloadedDatabaseFile = null;
         do
         {
             if (newDBDialog.getOkClicked()) {
@@ -698,8 +697,6 @@ public class DatabaseActions {
                     MainWindow.remoteUsername = username;
                     MainWindow.remotePassword = password;
                     MainWindow.remoteURL = remoteLocation;
-
-
                 }
                 else
                 {
