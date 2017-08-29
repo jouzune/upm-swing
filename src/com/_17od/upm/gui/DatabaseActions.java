@@ -745,12 +745,12 @@ public class DatabaseActions {
                 }
                 RESTTransport transport = new RESTTransport();
                 // Download the database
-                downloadedDatabaseBytes = null;
-                try
-                {
+//                downloadedDatabaseBytes = null;
+//                try
+//                {
                     downloadedDatabaseBytes = transport.get(remoteLocation, username, password);
-                }
-                catch(TransportException e){ e.printStackTrace(); }
+//                }
+//                catch(TransportException e){ e.printStackTrace(); }
 
                 if (downloadedDatabaseBytes != null) {
                     connected = true;

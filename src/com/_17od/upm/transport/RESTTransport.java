@@ -37,7 +37,6 @@ import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 
 import com._17od.upm.util.Preferences;
 
-
 public class RESTTransport{
 
     private HttpClient client;
@@ -96,8 +95,6 @@ public class RESTTransport{
                 throw new TransportException("No password");
             }
 
-            System.out.println("Data for put: " + new String(data));
-
             String usernameEncoded = "username=" + URLEncoder.encode(username, "UTF-8");
             String passwordEncoded = "password=" + URLEncoder.encode(password, "UTF-8");
             String databaseEncoded = "database=" + new String(Base64.encode(data));
@@ -128,9 +125,9 @@ public class RESTTransport{
 
     public void post(String targetLocation, byte[] data, String username, String password) throws TransportException {
 
-        targetLocation = addTrailingSlash(targetLocation) + "api/database";
+        String endpoint = addTrailingSlash(targetLocation) + "api/database";
 
-        PostMethod post = new PostMethod(targetLocation);
+        PostMethod post = new PostMethod(endpoint);
 
         //This part is wrapped in a try/finally so that we can ensure
         //the connection to the HTTP server is always closed cleanly
@@ -142,7 +139,7 @@ public class RESTTransport{
                 throw new TransportException("No password");
             }
             String dataStr = new String(Base64.encode(data));
-            System.out.print("POST body: " + dataStr);
+            System.out.println("POST body: " + dataStr);
 
             post.addRequestHeader("Authorization", getBasicAuth(username, password));
             post.addRequestHeader("Content-Type", "text/plain; charset=us-ascii");
@@ -152,6 +149,10 @@ public class RESTTransport{
 
             switch (status) {
                 case HttpStatus.SC_CREATED:
+                    break;
+                case HttpStatus.SC_NOT_FOUND:
+                    System.out.println("User not found, trying to PUT new user...");
+                    put(targetLocation, data, username, password);
                     break;
                 default: throw new TransportException(post.getResponseBodyAsString());
             }
@@ -185,7 +186,7 @@ public class RESTTransport{
         byte[] retVal = null;
 
         url = addTrailingSlash(url) + "api/database";
-        GetMethod method = new GetMethod(url);
+        GetMethod get = new GetMethod(url);
 
         //This part is wrapped in a try/finally so that we can ensure
         //the connection to the HTTP server is always closed cleanly
@@ -197,17 +198,17 @@ public class RESTTransport{
                 throw new TransportException("No password");
             }
 
-            method.setRequestHeader("Authorization", getBasicAuth(username, password));
-            int status = client.executeMethod(method);
+            get.setRequestHeader("Authorization", getBasicAuth(username, password));
+            int status = client.executeMethod(get);
 
             switch (status) {
                 case HttpStatus.SC_OK:
                     break;
-                default: throw new TransportException(method.getResponseBodyAsString());
+                default: throw new TransportException(get.getResponseBodyAsString());
             }
 
-            System.out.print("GET response body: " + method.getResponseBodyAsString());
-            retVal = Base64.decode(method.getResponseBody());
+            System.out.print("GET response body: " + get.getResponseBodyAsString());
+            retVal = Base64.decode(get.getResponseBody());
 
         } catch (MalformedURLException e) {
             throw new TransportException(e);
@@ -216,11 +217,10 @@ public class RESTTransport{
         } catch (IOException e) {
             throw new TransportException(e);
         } finally {
-            method.releaseConnection();
+            get.releaseConnection();
         }
 
         return retVal;
-
     }
 
 
