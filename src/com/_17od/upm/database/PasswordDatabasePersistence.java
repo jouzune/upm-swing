@@ -91,9 +91,9 @@ public class PasswordDatabasePersistence {
         encryptionService = new EncryptionService(password);
     }
 
-    public PasswordDatabase load(File databaseFile) throws InvalidPasswordException, ProblemReadingDatabaseFile, IOException {
+    public PasswordDatabase load(PersistenceStrategy strategy) throws InvalidPasswordException, ProblemReadingDatabaseFile, IOException {
 
-        byte[] fullDatabase = readFile(databaseFile);
+        byte[] fullDatabase = strategy.load();
 
         // Check the database is a minimum length
         if (fullDatabase.length < EncryptionService.SALT_LENGTH) {
@@ -107,7 +107,7 @@ public class PasswordDatabasePersistence {
         HashMap accounts = null;
         Charset charset = Charset.forName("UTF-8");
 
-        // Ensure this is a real UPM database by checking for the existence of 
+        // Ensure this is a real UPM database by checking for the existence of
         // the string "UPM" at the start of the file
         byte[] header = new byte[FILE_HEADER.getBytes().length];
         System.arraycopy(fullDatabase, 0, header, 0, header.length);
@@ -118,14 +118,14 @@ public class PasswordDatabasePersistence {
             int saltPos           = dbVersionPos + 1;
             int encryptedBytesPos = saltPos + EncryptionService.SALT_LENGTH;
 
-            // Get the database version 
+            // Get the database version
             byte dbVersion = fullDatabase[dbVersionPos];
 
             if (dbVersion == 2 || dbVersion == 3) {
                 byte[] salt = new byte[EncryptionService.SALT_LENGTH];
                 System.arraycopy(fullDatabase, saltPos, salt, 0, EncryptionService.SALT_LENGTH);
                 int encryptedBytesLength = fullDatabase.length - encryptedBytesPos;
-                byte[] encryptedBytes = new byte[encryptedBytesLength]; 
+                byte[] encryptedBytes = new byte[encryptedBytesLength];
                 System.arraycopy(fullDatabase, encryptedBytesPos, encryptedBytes, 0, encryptedBytesLength);
 
                 // From version 3 onwards Strings in AccountInformation are
@@ -143,12 +143,12 @@ public class PasswordDatabasePersistence {
                     throw new InvalidPasswordException();
                 }
 
-                //If we've got here then the database was successfully decrypted 
+                //If we've got here then the database was successfully decrypted
                 is = new ByteArrayInputStream(decryptedBytes);
                 try {
                     revision = new Revision(is);
                     dbOptions = new DatabaseOptions(is);
-    
+
                     // Read the remainder of the database in now
                     accounts = new HashMap();
                     try {
@@ -164,14 +164,14 @@ public class PasswordDatabasePersistence {
                     throw new ProblemReadingDatabaseFile(e.getMessage(), e);
                 }
 
-                passwordDatabase = new PasswordDatabase(revision, dbOptions, accounts, databaseFile);
+                passwordDatabase = new PasswordDatabase(revision, dbOptions, accounts, "");
 
             } else {
                 throw new ProblemReadingDatabaseFile("Don't know how to handle database version [" + dbVersion + "]");
             }
 
         } else {
-            
+
             // This might be an old database (pre version 2).
             // By throwing InvalidPasswordException the calling method can ask
             // the user for the password so that the load(File, char[]) method
@@ -179,16 +179,12 @@ public class PasswordDatabasePersistence {
             // db
             throw new InvalidPasswordException();
         }
-                
-        return passwordDatabase;
 
+        return passwordDatabase;
     }
 
-    public PasswordDatabase load(File databaseFile, char[] password) throws IOException, ProblemReadingDatabaseFile, InvalidPasswordException, CryptoException {
-
-        byte[] fullDatabase;
-        fullDatabase = readFile(databaseFile);
-
+    public PasswordDatabase load(PersistenceStrategy strategy, char[] password) throws IOException, ProblemReadingDatabaseFile, InvalidPasswordException, CryptoException {
+        byte[] fullDatabase = strategy.load();
         // Check the database is a minimum length
         if (fullDatabase.length < EncryptionService.SALT_LENGTH) {
             throw new ProblemReadingDatabaseFile("This file doesn't appear to be a UPM password database");
@@ -199,7 +195,7 @@ public class PasswordDatabasePersistence {
         DatabaseOptions dbOptions = null;
         Charset charset = Charset.forName("UTF-8");
 
-        // Ensure this is a real UPM database by checking for the existence of 
+        // Ensure this is a real UPM database by checking for the existence of
         // the string "UPM" at the start of the file
         byte[] header = new byte[FILE_HEADER.getBytes().length];
         System.arraycopy(fullDatabase, 0, header, 0, header.length);
@@ -210,14 +206,14 @@ public class PasswordDatabasePersistence {
             int saltPos           = dbVersionPos + 1;
             int encryptedBytesPos = saltPos + EncryptionService.SALT_LENGTH;
 
-            // Get the database version 
+            // Get the database version
             byte dbVersion = fullDatabase[dbVersionPos];
 
             if (dbVersion == 2 || dbVersion == 3) {
                 byte[] salt = new byte[EncryptionService.SALT_LENGTH];
                 System.arraycopy(fullDatabase, saltPos, salt, 0, EncryptionService.SALT_LENGTH);
                 int encryptedBytesLength = fullDatabase.length - encryptedBytesPos;
-                byte[] encryptedBytes = new byte[encryptedBytesLength]; 
+                byte[] encryptedBytes = new byte[encryptedBytesLength];
                 System.arraycopy(fullDatabase, encryptedBytesPos, encryptedBytes, 0, encryptedBytesLength);
 
                 // From version 3 onwards Strings in AccountInformation are
@@ -236,7 +232,7 @@ public class PasswordDatabasePersistence {
                     throw new InvalidPasswordException();
                 }
 
-                //If we've got here then the database was successfully decrypted 
+                //If we've got here then the database was successfully decrypted
                 is = new ByteArrayInputStream(decryptedBytes);
                 revision = new Revision(is);
                 dbOptions = new DatabaseOptions(is);
@@ -245,19 +241,19 @@ public class PasswordDatabasePersistence {
             }
 
         } else {
-            
+
             // This might be an old database (pre version 2) so try loading it using the old database format
-            
+
             // Check the database is a minimum length
             if (fullDatabase.length < EncryptionService.SALT_LENGTH) {
                 throw new ProblemReadingDatabaseFile("This file doesn't appear to be a UPM password database");
             }
-            
+
             //Split up the salt and encrypted bytes
             byte[] salt = new byte[EncryptionService.SALT_LENGTH];
             System.arraycopy(fullDatabase, 0, salt, 0, EncryptionService.SALT_LENGTH);
             int encryptedBytesLength = fullDatabase.length - EncryptionService.SALT_LENGTH;
-            byte[] encryptedBytes = new byte[encryptedBytesLength]; 
+            byte[] encryptedBytes = new byte[encryptedBytesLength];
             System.arraycopy(fullDatabase, EncryptionService.SALT_LENGTH, encryptedBytes, 0, encryptedBytesLength);
 
             byte[] decryptedBytes = null;
@@ -286,9 +282,8 @@ public class PasswordDatabasePersistence {
 
             // Initialise the EncryptionService so that it's ready for the "save" operation
             encryptionService = new EncryptionService(password);
-
         }
-        
+
         // Read the remainder of the database in now
         HashMap accounts = new HashMap();
         try {
@@ -301,15 +296,14 @@ public class PasswordDatabasePersistence {
         }
         is.close();
 
-        PasswordDatabase passwordDatabase = new PasswordDatabase(revision, dbOptions, accounts, databaseFile);
-        
-        return passwordDatabase;
+        PasswordDatabase passwordDatabase = new PasswordDatabase(revision, dbOptions, accounts, "");
 
+        return passwordDatabase;
     }
 
-    public void save(PasswordDatabase database) throws IOException, CryptoException {
+    public void save(PasswordDatabase database, PersistenceStrategy strategy) throws IOException, CryptoException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        
+
         // Flatpack the database revision and options
         database.getRevisionObj().increment();
         database.getRevisionObj().flatPack(os);
@@ -327,79 +321,18 @@ public class PasswordDatabasePersistence {
         //Now encrypt the database data
         byte[] encryptedData = encryptionService.encrypt(dataToEncrypt);
 
-        if(MainWindow.remoteURL != null && MainWindow.remotePassword != null && MainWindow.remoteUsername != null)
-        {
-            System.out.println("-----------------------------------------------");
-            System.out.println("ready to save to the database.");
-            System.out.println("URL: " + MainWindow.remoteURL);
-            System.out.println("Username: " + MainWindow.remoteUsername);
-            System.out.println("Password: " + MainWindow.remotePassword);
-            //do transport things with the byte[] encryptedData
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            stream.write(FILE_HEADER.getBytes());
-            stream.write(DB_VERSION);
-            stream.write(encryptionService.getSalt());
-            stream.write(encryptedData);
-            stream.flush();
-            byte[] bytes = stream.toByteArray();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        stream.write(FILE_HEADER.getBytes());
+        stream.write(DB_VERSION);
+        stream.write(encryptionService.getSalt());
+        stream.write(encryptedData);
+        stream.flush();
+        byte[] bytes = stream.toByteArray();
 
-            RESTTransport transport = new RESTTransport();
-            try
-            {
-                transport.post(MainWindow.remoteURL, bytes, MainWindow.remoteUsername, MainWindow.remotePassword);
-            }
-            catch(TransportException e)
-            {
-                e.printStackTrace();
-            }
-            System.out.println();
-            System.out.println();
-
-        }
-        
-        //Write the salt and the encrypted data out to the database file
-        FileOutputStream fos = new FileOutputStream(database.getDatabaseFile());
-        fos.write(FILE_HEADER.getBytes());
-        fos.write(DB_VERSION);
-        fos.write(encryptionService.getSalt());
-        fos.write(encryptedData);
-        fos.close();
+        strategy.save(bytes, encryptionService);
     }
 
     public EncryptionService getEncryptionService() {
         return encryptionService;
     }
-
-    private byte[] readFile(File file) throws IOException {
-        InputStream is;
-        try {
-            is = new FileInputStream(file);
-        } catch (IOException e) {
-            throw new IOException("There was a problem with opening the file", e);
-        }
-    
-        // Create the byte array to hold the data
-        byte[] bytes = new byte[(int) file.length()];
-    
-        // Read in the bytes
-        int offset = 0;
-        int numRead = 0;
-        
-        try {
-            while (offset < bytes.length
-                    && (numRead=is.read(bytes, offset, bytes.length-offset)) >= 0) {
-                offset += numRead;
-            }
-    
-            // Ensure all the bytes have been read in
-            if (offset < bytes.length) {
-                throw new IOException("Could not completely read file " + file.getName());
-            }
-        } finally {
-            is.close();
-        }
-
-        return bytes;
-    }
-
 }

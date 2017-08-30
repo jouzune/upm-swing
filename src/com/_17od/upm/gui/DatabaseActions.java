@@ -38,19 +38,12 @@ import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
 import javax.swing.Timer;
 
-import com._17od.upm.transport.RESTTransport;
+import com._17od.upm.database.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com._17od.upm.crypto.CryptoException;
 import com._17od.upm.crypto.InvalidPasswordException;
-import com._17od.upm.database.AccountInformation;
-import com._17od.upm.database.AccountsCSVMarshaller;
-import com._17od.upm.database.ExportException;
-import com._17od.upm.database.ImportException;
-import com._17od.upm.database.PasswordDatabase;
-import com._17od.upm.database.PasswordDatabasePersistence;
-import com._17od.upm.database.ProblemReadingDatabaseFile;
 import com._17od.upm.gui.MainWindow.ChangeDatabaseAction;
 import com._17od.upm.transport.Transport;
 import com._17od.upm.transport.TransportException;
@@ -70,6 +63,7 @@ public class DatabaseActions {
     private ArrayList accountNames;
     private boolean localDatabaseDirty = true;
     private PasswordDatabasePersistence dbPers;
+    private PersistenceStrategy persistenceStrategy;
     private FileMonitor fileMonitor;
     private boolean databaseNeedsReload = false;
 
@@ -129,7 +123,8 @@ public class DatabaseActions {
             newDatabaseFile.delete();
         }
 
-        database = new PasswordDatabase(newDatabaseFile);
+        persistenceStrategy = new FilePersistenceStrategy(newDatabaseFile);
+        database = new PasswordDatabase(newDatabaseFile.getAbsolutePath());
         dbPers = new PasswordDatabasePersistence(masterPassword.getPassword());
         saveDatabase();
         accountNames = new ArrayList();
@@ -165,7 +160,7 @@ public class DatabaseActions {
                     okClicked = false;
                 } else {
                     try {
-                        dbPers.load(database.getDatabaseFile(), password);
+                        dbPers.load(persistenceStrategy, password);
                         passwordCorrect = true;
                     } catch (InvalidPasswordException e) {
                         JOptionPane.showMessageDialog(mainWindow, Translator.translate("incorrectPassword"));
@@ -281,16 +276,21 @@ public class DatabaseActions {
         accountNames = getAccountNames();
         populateListview(accountNames);
 
-        // Start a thread to listen for changes to the db file
-        FileChangedCallback callback = new FileChangedCallback() {
-            public void fileChanged(File file) {
-                databaseNeedsReload = true;
-                mainWindow.setFileChangedPanelVisible(true);
-            }
-        };
-        fileMonitor = new FileMonitor(database.getDatabaseFile(), callback);
-        Thread thread = new Thread(fileMonitor);
-        thread.start();
+        if (database.getDatabaseFile() != null)
+        {
+            // Start a thread to listen for changes to the db file
+            FileChangedCallback callback = new FileChangedCallback()
+            {
+                public void fileChanged(File file)
+                {
+                    databaseNeedsReload = true;
+                    mainWindow.setFileChangedPanelVisible(true);
+                }
+            };
+            fileMonitor = new FileMonitor(database.getDatabaseFile(), callback);
+            Thread thread = new Thread(fileMonitor);
+            thread.start();
+        }
 
         // If the user asked for the db to close after a period of
         // inactivity then register a listener to capture window focus
@@ -338,8 +338,6 @@ public class DatabaseActions {
         return accountNames;
     }
 
-
-
     /**
      * Prompt the user to enter a password
      * @return The password entered by the user or null of this hit escape/cancel
@@ -365,12 +363,13 @@ public class DatabaseActions {
     }
 
 
-    public void openDatabase(String databaseFilename) throws IOException, ProblemReadingDatabaseFile, CryptoException {
-        openDatabase(databaseFilename, null);
+    public void openDatabaseFromFile(String databaseFilename) throws IOException, ProblemReadingDatabaseFile, CryptoException {
+        persistenceStrategy = new FilePersistenceStrategy(new File(databaseFilename));
+        openDatabase(null);
     }
 
 
-    public void openDatabase(String databaseFilename, char[] password) throws IOException, ProblemReadingDatabaseFile, CryptoException {
+    public void openDatabase(char[] password) throws IOException, ProblemReadingDatabaseFile, CryptoException {
 
         boolean passwordCorrect = false;
         boolean okClicked = true;
@@ -388,7 +387,7 @@ public class DatabaseActions {
             if (okClicked) {
                 try {
                     dbPers = new PasswordDatabasePersistence();
-                    database = dbPers.load(new File(databaseFilename), password);
+                    database = dbPers.load(persistenceStrategy, password);
                     passwordCorrect = true;
                 } catch (InvalidPasswordException e) {
                     JOptionPane.showMessageDialog(mainWindow, Translator.translate("incorrectPassword"));
@@ -412,7 +411,7 @@ public class DatabaseActions {
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File databaseFile = fc.getSelectedFile();
             if (databaseFile.exists()) {
-                openDatabase(databaseFile.getAbsolutePath());
+                openDatabaseFromFile(databaseFile.getAbsolutePath());
             } else {
                 JOptionPane.showMessageDialog(mainWindow, Translator.translate("fileDoesntExistWithName", databaseFile.getAbsolutePath()), Translator.translate("fileDoesntExist"), JOptionPane.ERROR_MESSAGE);
             }
@@ -686,17 +685,14 @@ public class DatabaseActions {
                 String confirm = newDBDialog.getConfirmPasswordTextField().getText();
                 if(password.equals(confirm))
                 {
-                    if(!remoteLocation.substring(0,6).equals("http://"))
+                    if(!remoteLocation.startsWith("http://"))
                     {
                         remoteLocation = "http://" + remoteLocation;
                     }
-                    RESTTransport transport = new RESTTransport();
-
-//                    transport.post(remoteLocation,  , username, password);
                     connected = true;
-                    MainWindow.remoteUsername = username;
-                    MainWindow.remotePassword = password;
-                    MainWindow.remoteURL = remoteLocation;
+                    persistenceStrategy = new RemotePersistenceStrategy(remoteLocation, username, password);
+                    database = new PasswordDatabase(remoteLocation);
+                    dbPers = new PasswordDatabasePersistence(password.toCharArray());
                 }
                 else
                 {
@@ -710,11 +706,6 @@ public class DatabaseActions {
         }while(!connected && !exited);
         if(connected)
         {
-            // Ask the user for a location to save the database file to
-            File saveDatabaseTo = getSaveAsFile(Translator.translate("saveDatabaseAs"));
-            // Delete the file if it already exists
-            database = new PasswordDatabase(saveDatabaseTo);
-            dbPers = new PasswordDatabasePersistence(MainWindow.remotePassword.toCharArray());
             saveDatabase();
             accountNames = new ArrayList();
             doOpenDatabaseActions();
@@ -727,7 +718,6 @@ public class DatabaseActions {
         OpenDatabaseFromURLDialog openDBDialog = createOpenDBDialog();
         boolean connected = false;
         boolean exited = false;
-        byte[] downloadedDatabaseBytes = null;
         do
         {
             if (openDBDialog.getOkClicked()) {
@@ -736,29 +726,12 @@ public class DatabaseActions {
                 String username = openDBDialog.getUsernameTextField().getText();
                 String password = openDBDialog.getPasswordTextField().getText();
 
-                if(!remoteLocation.substring(0,6).equals("http://"))
+                if(!remoteLocation.startsWith("http://"))
                 {
                     remoteLocation = "http://" + remoteLocation;
                 }
-                RESTTransport transport = new RESTTransport();
-                // Download the database
-//                downloadedDatabaseBytes = null;
-//                try
-//                {
-                    downloadedDatabaseBytes = transport.get(remoteLocation, username, password);
-//                }
-//                catch(TransportException e){ e.printStackTrace(); }
-
-                if (downloadedDatabaseBytes != null) {
-                    connected = true;
-                    MainWindow.remoteUsername = username;
-                    MainWindow.remotePassword = password;
-                    MainWindow.remoteURL = remoteLocation;
-                }
-                else
-                {
-                    openDBDialog = createOpenDBDialog();
-                }
+                connected = true;
+                persistenceStrategy = new RemotePersistenceStrategy(remoteLocation, username, password);
             }
             if(!openDBDialog.isVisible())
             {
@@ -767,18 +740,7 @@ public class DatabaseActions {
         }while(!connected && !exited);
         if(connected)
         {
-            // Ask the user for a location to save the database file to
-            File saveDatabaseTo = getSaveAsFile(Translator.translate("saveDatabaseAs"));
-            // Delete the file is it already exists
-            if (saveDatabaseTo.exists()) {
-                saveDatabaseTo.delete();
-            }
-            FileOutputStream fos = new FileOutputStream(saveDatabaseTo);
-            fos.write(downloadedDatabaseBytes);
-            fos.close();
-
-            // Now open the downloaded database
-            openDatabase(saveDatabaseTo.getAbsolutePath());
+            openDatabase(null);
         }
     }
 
@@ -806,7 +768,8 @@ public class DatabaseActions {
             throws InvalidPasswordException, ProblemReadingDatabaseFile, IOException {
         PasswordDatabase reloadedDb = null;
         try {
-            reloadedDb = dbPers.load(database.getDatabaseFile());
+//            reloadedDb = dbPers.load(database.getDatabaseFile());
+            reloadedDb = dbPers.load(persistenceStrategy);
         } catch (InvalidPasswordException e) {
             // The password for the reloaded database is different to that of
             // the open database
@@ -818,7 +781,7 @@ public class DatabaseActions {
                 } else {
                     okClicked = true;
                     try {
-                        reloadedDb = dbPers.load(database.getDatabaseFile(), password);
+                        reloadedDb = dbPers.load(persistenceStrategy, password);
                     } catch (InvalidPasswordException invalidPassword) {
                         JOptionPane.showMessageDialog(mainWindow, Translator.translate("incorrectPassword"));
                     } catch (CryptoException e1) {
@@ -861,7 +824,7 @@ public class DatabaseActions {
 
         PasswordDatabase reloadedDb = null;
         try {
-            reloadedDb = dbPers.load(database.getDatabaseFile());
+            reloadedDb = dbPers.load(persistenceStrategy);
         } catch (InvalidPasswordException e) {
             // The password for the reloaded database is different to that of
             // the open database
@@ -874,7 +837,7 @@ public class DatabaseActions {
                 } else {
                     okClicked = true;
                     try {
-                        reloadedDb = dbPers.load(database.getDatabaseFile(),
+                        reloadedDb = dbPers.load(persistenceStrategy,
                                 password);
                     } catch (InvalidPasswordException invalidPassword) {
                         JOptionPane.showMessageDialog(mainWindow,
@@ -923,7 +886,7 @@ public class DatabaseActions {
             char[] password = null;
             boolean successfullyDecryptedDb = false;
             try {
-                remoteDatabase = dbPers.load(remoteDatabaseFile);
+                remoteDatabase = dbPers.load(persistenceStrategy);
                 successfullyDecryptedDb = true;
             } catch (InvalidPasswordException e) {
                 // The password for the downloaded database is different to that of the open database
@@ -936,7 +899,7 @@ public class DatabaseActions {
                     } else {
                         okClicked = true;
                         try {
-                            remoteDatabase = dbPers.load(remoteDatabaseFile, password);
+                            remoteDatabase = dbPers.load(persistenceStrategy, password);
                             successfullyDecryptedDb = true;
                         } catch (InvalidPasswordException invalidPassword) {
                             JOptionPane.showMessageDialog(mainWindow, Translator.translate("incorrectPassword"));
@@ -959,7 +922,8 @@ public class DatabaseActions {
                             remoteDatabase.getRevisionObj(),
                             remoteDatabase.getDbOptions(),
                             remoteDatabase.getAccountsHash(),
-                            database.getDatabaseFile());
+                            remoteDatabase.getRepresentation());
+//                            database.getDatabaseFile());
                     doOpenDatabaseActions();
                     syncSuccessful = true;
                 } else {
@@ -1146,9 +1110,8 @@ public class DatabaseActions {
         return selectedFile;
     }
 
-
     private void saveDatabase() throws IOException, CryptoException {
-        dbPers.save(database);
+        dbPers.save(database, persistenceStrategy);
         if (fileMonitor != null) {
             fileMonitor.start();
         }
@@ -1215,7 +1178,8 @@ public class DatabaseActions {
             }
             if (databaseClosedOnTimer != null) {
                 try {
-                    openDatabase(databaseClosedOnTimer);
+//                    openDatabase(databaseClosedOnTimer);
+                    openDatabase(null);
                 } catch (Exception e) {
                     errorHandler(e);
                 }

@@ -145,11 +145,6 @@ public class RESTTransport{
             post.addRequestHeader("Content-Type", "text/plain; charset=us-ascii");
             post.setRequestEntity(new ByteArrayRequestEntity(Base64.encode(data)));
 
-//            post.addParameter("username", URLEncoder.encode(username, "UTF-8"));
-//            post.addParameter("password", URLEncoder.encode(password, "UTF-8"));
-//            post.addParameter("database", URLEncoder.encode(new String(data), "UTF-8"));
-//            post.addParameter("database", new String(data));
-
             int status = client.executeMethod(post);
 
             switch (status) {
@@ -212,7 +207,7 @@ public class RESTTransport{
                 default: throw new TransportException(get.getResponseBodyAsString());
             }
 
-            System.out.print("GET response body: " + get.getResponseBodyAsString());
+            System.out.println("GET response body: " + get.getResponseBodyAsString());
             retVal = Base64.decode(get.getResponseBody());
 
         } catch (MalformedURLException e) {
@@ -227,37 +222,6 @@ public class RESTTransport{
 
         return retVal;
     }
-
-
-    public File getRemoteFile(String remoteLocation, String fileName) throws TransportException {
-        return getRemoteFile(remoteLocation, fileName, null, null);
-    }
-
-
-    public File getRemoteFile(String remoteLocation) throws TransportException {
-        return getRemoteFile(remoteLocation, null, null);
-    }
-
-
-    public File getRemoteFile(String remoteLocation, String fileName, String httpUsername, String httpPassword) throws TransportException {
-        remoteLocation = addTrailingSlash(remoteLocation);
-        return getRemoteFile(remoteLocation + fileName, httpUsername, httpPassword);
-    }
-
-
-    public File getRemoteFile(String remoteLocation, String httpUsername, String httpPassword) throws TransportException {
-        try {
-            byte[] remoteFile = get(remoteLocation, httpUsername, httpPassword);
-            File downloadedFile = File.createTempFile("upm", null);
-            FileOutputStream fos = new FileOutputStream(downloadedFile);
-            fos.write(remoteFile);
-            fos.close();
-            return downloadedFile;
-        } catch (IOException e) {
-            throw new TransportException(e);
-        }
-    }
-
 
     public void delete(String targetLocation, String name, String username, String password) throws TransportException {
 
@@ -310,7 +274,6 @@ public class RESTTransport{
         }
         return url;
     }
-
 
     private boolean isNotEmpty(String stringToCheck) {
         boolean retVal = false;

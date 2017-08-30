@@ -47,7 +47,8 @@ public class TestPasswordDatabase extends TestCase {
 
         PasswordDatabase db = new PasswordDatabase(new File(databaseFileName));
         PasswordDatabasePersistence pers = new PasswordDatabasePersistence(password);
-        pers.save(db);
+        FilePersistenceStrategy strategy = new FilePersistenceStrategy(new File(databaseFileName));
+        pers.save(db, strategy);
 
         File f = new File(databaseFileName);
         if (f.exists() == false) {
@@ -64,11 +65,12 @@ public class TestPasswordDatabase extends TestCase {
         //Create the db on this line
         PasswordDatabase db = new PasswordDatabase(new File(databaseFileName));
         PasswordDatabasePersistence pers = new PasswordDatabasePersistence(password);
-        pers.save(db);
-        
+        FilePersistenceStrategy strategy = new FilePersistenceStrategy(new File(databaseFileName));
+        pers.save(db, strategy);
+
         //Now try to open the db again
         PasswordDatabasePersistence dbPers = new PasswordDatabasePersistence();
-        dbPers.load(new File(databaseFileName), password);
+        dbPers.load(strategy, password);
     }
     
     
@@ -87,11 +89,12 @@ public class TestPasswordDatabase extends TestCase {
                 "this is the notes");
         db.addAccount(ai);
         PasswordDatabasePersistence pers = new PasswordDatabasePersistence(password);
-        pers.save(db);
+        FilePersistenceStrategy strategy = new FilePersistenceStrategy(new File(databaseFileName));
+        pers.save(db, strategy);
 
         //Load the db
         PasswordDatabasePersistence dbPers = new PasswordDatabasePersistence();
-        db = dbPers.load(new File(databaseFileName), password);
+        db = dbPers.load(strategy, password);
 
         //Check to ensure the account was loaded back in
         AccountInformation ai2 = db.getAccount("Hotmail");
@@ -124,17 +127,18 @@ public class TestPasswordDatabase extends TestCase {
         db.addAccount(ai);
         db.addAccount(ai2);
         PasswordDatabasePersistence dbPers = new PasswordDatabasePersistence(password);
-        dbPers.save(db);
+        FilePersistenceStrategy strategy = new FilePersistenceStrategy(new File(databaseFileName));
+        dbPers.save(db, strategy);
         
         //Load the db 
-        db = dbPers.load(new File(databaseFileName));
+        db = dbPers.load(strategy, password);
         
         //Delete an account
         db.deleteAccount("Yahoo Mail");
-        dbPers.save(db);
+        dbPers.save(db, strategy);
 
         //Load the db again 
-        db = dbPers.load(new File(databaseFileName));
+        db = dbPers.load(strategy, password);
 
         //Check to ensure the Hotmail account still exists
         AccountInformation hotmailAccount = db.getAccount("Hotmail");
